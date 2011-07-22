@@ -1,0 +1,22 @@
+<html>
+  <head>
+  	<style type="text/css">
+  	  #error {color:red}
+  	  #message {color:green}
+  	  body {
+             font-family:verdana,helvetica,arial,sans-serif;
+           }
+    </style>
+  </head>
+  <body>
+  	<% if @error %>
+  	<div id="error"><%= @error %><br /></div>
+  	<% end %>
+  	
+  	<% if @message %>
+  	<div id="message"><%= @message %><br /></div>
+  	<% end %>
+  	
+    <%= yield %>
+  </body>
+</html>

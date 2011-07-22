@@ -32,7 +32,27 @@ get '/login' do
   erb :login
 end
 
-post '/adduser'
+post '/adduser' do
+  @user = params[:user]
+  password = params[:password]
+  repeat = params[:repeat]
+  if @user.blank? or @user.length < 4
+    @error = "FAILED: Username should be at least 4 characters."
+  end
+  if (password.blank? or password.length < 4)
+    @error = "FAILED: Password should be at least 4 characters."
+  end
+  
+  if (password != repeat)
+    @error = "FAILED: The entered passwords are not the same."
+  end
+
+  if @error
+    erb :add_user
+  else
+    @message = "Congratulations! Your account is created."
+    erb :login
+  end
 end
 
 get '/:user' do
@@ -80,6 +100,22 @@ def add_a_todo
     redirect "/login"
   end
 end
+
+# My useful methods
+helpers do
+  def partial(page, options={})
+    name = ("_" + page.to_s).to_sym
+    erb name, options.merge!(:layout => false)
+  end
+end
+
+class String
+  def blank?
+    nil? || empty?
+  end
+end
+
+private
 
 def valid_user?
   session[:user] and (session[:user] == params[:user].to_i.to_s)

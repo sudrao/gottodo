@@ -10,28 +10,29 @@ def todocount_key
   "TODO::TODOCOUNT"
 end
 
-def userlist_key(username)
+def userlist_key(hashname)
   # Set of possibly duplicate names
   # distinguished by numeric extension
-  "USER:#{username}:USERLIST"
+  "USER:#{hashname}:USERLIST"
 end
 
 # only username+realname is guaranteed to be unique
-def userid_key(username, realname)
-  "USER:{usernme}:{realname}:USERID"
+def userid_key(hashname, instance)
+  "USER:{hashname}:{instance}:USERID"
 end
 
-def userpass_key(username, realname)
-  "USER:#{username}:#{realname}:PASSWORD"
+def userpass_key(hashname, instance)
+  "USER:#{hashname}:#{instance}:PASSWORD"
 end
 
-def username_key(id)
+def userinst_key(id)
   # real username
-  "USER:#{id}}=:USERNAME"
+  "USER:#{id}}=:INSTANCE"
 end
 
-def basename_key(id)
-  "USER:#{id}:BASENAME"
+# Get the hashed username from id
+def username_key(id)
+  "USER:#{id}:HASHNAME"
 end
 def pending_key(id)
   "TODOS:#{id}:PENDING"

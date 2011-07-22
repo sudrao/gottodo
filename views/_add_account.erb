@@ -1,0 +1,16 @@
+<form action="/adduser" method="post">
+	<label>Username: </label>
+	<input name="user" type="text" value="<%= @user %>"/><br />
+	<label>Password: </label>
+	<input name="password", type="password"><br />
+	<label>Enter password again: </label>
+	<input name="repeat", type="password"><br />
+	<input type="submit" value="Create Account"><br />
+</form>
+	Note: We only store encrypted (MD5 hash of) usernames and passwords<br />
+	      If you forget either, you will have to start over. Data is<br />
+	      not recoverable in such case. On the plus side, if our<br />
+	      server is hacked, your username and password are safe.<br />
+	      Your to do's are stored in clear text. Take care!
+
+<br /><br />
