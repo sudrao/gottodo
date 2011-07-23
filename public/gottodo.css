@@ -1,0 +1,48 @@
+#error {
+  color:red;
+  font-size:1.2em;
+}
+#message {
+  color:green;
+  font-size:1.2em;
+}
+
+body {
+  font-family:verdana,helvetica,arial,sans-serif;
+  background-color:rgb(222,248,254);
+  text-align:center;
+  font-size:0.8em;
+}
+
+#logo {
+  text-align:left;
+  position:absolute; left:10px; top:10px;
+  width:512px;
+}
+
+.middle {
+  width:500px;
+  margin-left: auto;
+  margin-right: auto;
+  padding:15px;
+}
+
+.back {
+  background-color:rgb(222,248,254)
+}
+
+.front {
+  background-image:url('front.png');
+  position: relative;
+  top:60px;
+  text-align:left;
+}
+
+#heading {
+  font-size:1.2em;
+  font-weight:700;
+}
+
+#sub-heading {
+  font-weight:400;
+}

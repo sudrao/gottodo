@@ -1,9 +1,10 @@
 require 'sinatra'
-require 'erb'
 require 'redis'
 require 'json'
 require 'passwords'
 require 'keymap'
+require 'haml'
+
 
 # cloudfoundry stuff
 configure do
@@ -25,11 +26,11 @@ get '/hi' do
 end
 
 get '/' do
-  erb :welcome
+  haml :welcome
 end
 
 get '/login' do
-  erb :login
+  haml :login
 end
 
 post '/adduser' do
@@ -48,10 +49,10 @@ post '/adduser' do
   end
 
   if @error
-    erb :add_user
+    haml :add_user
   else
     @message = "Congratulations! Your account is created."
-    erb :login
+    haml :login
   end
 end
 
@@ -62,9 +63,9 @@ get '/:user' do
     @username = r.get username_key(@userid)
     @pending = r.smembers pending_key(@userid)
     @complete = r.smembers complete_key(@userid)
-    erb :index
+    haml :index
   else
-    erb :login
+    haml :login
   end
 end
 
@@ -76,7 +77,7 @@ post '/login' do
     redirect "/#{userid}-#{params[:user]}"
   else
     @error = "Login failed, please try again"
-    erb :login
+    haml :login
   end
 end
 
@@ -105,7 +106,7 @@ end
 helpers do
   def partial(page, options={})
     name = ("_" + page.to_s).to_sym
-    erb name, options.merge!(:layout => false)
+    haml name, options.merge!(:layout => false)
   end
 end
 

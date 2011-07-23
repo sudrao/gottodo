@@ -1,0 +1,12 @@
+%html
+  %head
+    %link{:href => "gottodo.css", :rel => "stylesheet", :type => "text/css"}
+  %body
+    %img#logo{:src => "gottodo.png", :alt => "logo"}/
+    - if @error
+      #error= @error
+      %br/
+    - if @message
+      #message= @message
+      %br/
+    = yield
