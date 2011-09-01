@@ -1,60 +1,9 @@
-require 'sinatra'
-require 'redis'
-require 'json'
-require 'passwords'
-require 'keymap'
-require 'haml'
-
-
-# cloudfoundry stuff
-configure do
-  enable :sessions
-
-  if vcap = ENV['VCAP_SERVICES']
-    services = JSON.parse(vcap)
-    redis_key = services.keys.select { |svc| svc =~ /redis/i }.first
-    redis = services[redis_key].first['credentials']
-    redis_conf = {:host => redis['hostname'], :port => redis['port'], :password => redis['password']}
-    @@redis = Redis.new redis_conf
-  else
-    @@redis = Redis.new
-  end
-end
-
-get '/hi' do
-  "Hi! This is a to do's manager."
-end
-
-get '/' do
-  haml :welcome
-end
-
-get '/login' do
-  haml :login
-end
-
-post '/adduser' do
-  @user = params[:user]
-  password = params[:password]
-  repeat = params[:repeat]
-  if @user.blank? or @user.length < 4
-    @error = "FAILED: Username should be at least 4 characters."
-  end
-  if (password.blank? or password.length < 4)
-    @error = "FAILED: Password should be at least 4 characters."
-  end
+class MainController < ApplicationController
   
-  if (password != repeat)
-    @error = "FAILED: The entered passwords are not the same."
-  end
+  def index
+     # haml :welcome
+  end   
 
-  if @error
-    haml :add_user
-  else
-    @message = "Congratulations! Your account is created."
-    haml :login
-  end
-end
 
 get '/:user' do
   if valid_user?
@@ -120,4 +69,6 @@ private
 
 def valid_user?
   session[:user] and (session[:user] == params[:user].to_i.to_s)
+end
+
 end
