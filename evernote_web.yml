@@ -1,0 +1,5 @@
+# evernote_web.yml: key to be able to read any user's data who has permitted us
+username: sudtest
+password: hyderabad
+consumer_key: sudtest-2693
+consumer_secret: b82e369d1e86f45a
