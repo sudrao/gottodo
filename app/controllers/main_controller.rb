@@ -4,6 +4,7 @@ class MainController < ApplicationController
      # haml :welcome
   end   
 
+=begin
 
 get '/:user' do
   if valid_user?
@@ -70,5 +71,6 @@ private
 def valid_user?
   session[:user] and (session[:user] == params[:user].to_i.to_s)
 end
+=end
 
 end

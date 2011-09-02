@@ -17,4 +17,4 @@ class GetNote
   end
 end
 
-GetNote.run
+#GetNote.run

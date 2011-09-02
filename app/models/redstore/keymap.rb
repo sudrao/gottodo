@@ -1,26 +1,28 @@
-# module methods to get keys (strings) for each object in redis
+# methods to get keys (strings) for each object in redis
 module Redstore
   module Keymap
 
-    def usercount_key
+    # module methods
+    def self.usercount_key
       # Global count of users
       # Does not decrement even if user removed
       "USER::USERCOUNT"
     end
 
-    def todocount_key
+    def self.todocount_key
       # Global count of todos
       # Does not decrement even if todo removed
       "TODO::TODOCOUNT"
     end
 
+    # regular methods
     def userlist_key(hashname)
       # Set of possibly duplicate names
       # distinguished by numeric extension
       "USER:#{hashname}:USERLIST"
     end
 
-    # only username+realname is guaranteed to be unique
+    # only hashname+instance is guaranteed to be unique
     def userid_key(hashname, instance)
       "USER:#{hashname}:#{instance}:USERID"
     end
@@ -45,6 +47,14 @@ module Redstore
 
     def complete_key(id)
       "TODOS:#{id}:COMPLETE"
+    end
+    
+    def evernote_token_key(id)
+      "EVERNOTE:#{id}:TOKEN"
+    end
+    
+    def evernote_secret_key(id)
+      "EVERNOTE:#{id}:SECRET"
     end
   end
 end

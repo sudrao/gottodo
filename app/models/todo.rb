@@ -8,7 +8,7 @@ class Todo
   def initialize(attr = {})
     attr.each do |attr_name, value|
       # construct method name from variable content
-      send("#{attr_name}", value)
+      send("#{attr_name}=", value)
     end
   end
  
