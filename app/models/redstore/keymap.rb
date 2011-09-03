@@ -15,6 +15,11 @@ module Redstore
       "TODO::TODOCOUNT"
     end
 
+    def self.tokencount_key
+      # Global count of tokens
+      "TOKEN::TOKENCOUNT"
+    end
+    
     # regular methods
     def userlist_key(hashname)
       # Set of possibly duplicate names
@@ -49,8 +54,16 @@ module Redstore
       "TODOS:#{id}:COMPLETE"
     end
     
-    def evernote_token_key(id)
-      "EVERNOTE:#{id}:TOKEN"
+    def token_userid_key(id)
+      "TOKEN:#{id}:USERID"
+    end
+    
+    def token_key_key(id)
+      "TOKEN:#{id}:KEY"
+    end
+    
+    def token_secret_key(id)
+      "TOKEN:#{id}:SECRET"
     end
     
     def evernote_secret_key(id)

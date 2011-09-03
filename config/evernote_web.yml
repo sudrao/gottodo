@@ -1,5 +1,14 @@
 # evernote_web.yml: key to be able to read any user's data who has permitted us
 username: sudtest
 password: hyderabad
-consumer_key: sudtest-2693
-consumer_secret: b82e369d1e86f45a
+evernote:
+  key: sudtest-2693
+  secret: b82e369d1e86f45a
+  client: :oauth_gem
+  expose: false
+  allow_login: true
+  site: https://sandbox.evernote.com
+  request_token_path: /oauth
+  access_token_path: /oauth
+  authorize_path: /OAuth.action
+  

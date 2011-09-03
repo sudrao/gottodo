@@ -54,7 +54,7 @@ module Gottodo
     
     # Generators
     config.generators do |g|
-      g.orm             :mongoid # should be redis but oath-plugin does not support it
+      g.orm             :active_record # should be redis but oath-plugin does not support it
       g.template_engine :erb
       g.test_framework  :rspec
     end

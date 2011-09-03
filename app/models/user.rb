@@ -41,10 +41,6 @@ class User
     id
   end
   
-  def evernote_cred_save(token, secret)
-    $redis.set evernote_token_key(@userid), token
-    $redis.set evernote_secret_key(@userid), secret
-  end
   
   # This method allows use of url helpers without a standard db
   def persisted?
