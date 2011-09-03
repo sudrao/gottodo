@@ -10,7 +10,7 @@ class Base
   attr_accessor :proxy
   
   # Set proxy to nil before instantiating, if there is no proxy. Not tested
-  @@proxy = "http://proxy-sjc-1.cisco.com:8080"
+  @@proxy = nil
   
   def initialize(consumer_key, consumer_secret, site)
     @consumer = OAuth::Consumer.new(consumer_key, consumer_secret,
@@ -52,14 +52,14 @@ module Request
   # After Access.new, you need to complete verify for further access
   # Access.new returns the URL for the user to go to
   # Pass in old request token/secret if recreating a request token
-  def initialize(credentials, req_token=nil, req_secret=nil)
-    super(credentials[:consumer_key], credentials[:consumer_secret])
-    if (req_token && req_secret)
-      @request_token = OAuth::RequestToken.new(@consumer, req_token, req_secret)
+  def initialize(callback_url, req_token=nil)
+    super(@@credentials)
+    if (req_token)
+      @request_token = OAuth::RequestToken.new(@consumer, req_token['token'], req_token['secret'])
     else
-      @request_token = @consumer.get_request_token
+      @request_token = @consumer.get_request_token(:oauth_callback => callback_url)
     end
-    @authorize_url = @request_token.authorize_url
+    @authorize_url = @request_token.authorize_url(:oauth_callback => callback_url)
   end
   
   # Pass in the verifier code that was obtained by the user
