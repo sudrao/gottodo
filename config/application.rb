@@ -5,6 +5,8 @@ require "action_mailer/railtie"
 require "active_resource/railtie"
 #require "rails/test_unit/railtie"
 
+require 'oauth/rack/oauth_filter' # when using oauth-plugin
+
 if defined?(Bundler)
   # If you precompile assets before deploying to production, use this line
   Bundler.require *Rails.groups(:assets => %w(development test))
@@ -41,11 +43,24 @@ module Gottodo
 
     # Configure sensitive parameters which will be filtered from the log file.
     config.filter_parameters += [:password]
+    config.filter_parameters += [:repeat]
+
 
     # Enable the asset pipeline
     config.assets.enabled = true
 
     # Version of your assets, change this if you want to expire all your assets
     config.assets.version = '1.0'
+    
+    # Generators
+    config.generators do |g|
+      g.orm             :mongoid # should be redis but oath-plugin does not support it
+      g.template_engine :erb
+      g.test_framework  :rspec
+    end
+    
+    # Rack filter for oauth-plugin
+    config.middleware.use OAuth::Rack::OAuthFilter
+    
   end
 end
