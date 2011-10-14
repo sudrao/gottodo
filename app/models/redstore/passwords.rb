@@ -65,8 +65,8 @@ module Redstore
     extend Redstore::Keymap
     def self.authenticate(username, password)
       r = $redis
-      hashname = digest_of(username)
-      pass = digest_of(password)
+      hashname = secure_hash(username)
+      pass = secure_hash(password)
       key = userlist_key(hashname)
       userid = nil
       if r.exists(key)
@@ -83,8 +83,8 @@ module Redstore
   end
 end
 
-#puts digest_of("MyPass")
-#puts digest_of("")
-#puts digest_of("HisPass")
-#puts digest_of("MyPass")
+#puts secure_hash("MyPass")
+#puts secure_hash("")
+#puts secure_hash("HisPass")
+#puts secure_hash("MyPass")
 

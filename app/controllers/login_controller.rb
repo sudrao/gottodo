@@ -7,11 +7,13 @@ class LoginController < ApplicationController
   
   def new
   end
-  
+=begin  
   def create
     @user = User.find_by_login(params)
     
     respond_with(@user) do |format|
       if @user
         sign_in()
+=end
+end
     
