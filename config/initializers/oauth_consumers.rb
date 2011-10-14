@@ -1,1 +1,1 @@
-OAUTH_CREDENTIALS = YAML::load_file('oauth_web.yml')
+OAUTH_CREDENTIALS = YAML::load_file(Rails.root.join('config', 'oauth_web.yml'))

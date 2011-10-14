@@ -6,10 +6,11 @@ class User
   include ActiveModel::Conversion
   include Redstore::Keymap
   include Redstore::Saver
+  IS_NEW = true
   
   @@usercount = $redis.get(Redstore::Keymap.usercount_key) # read initial value here
   
-  attr_accessor :username, :password, :repeat
+  attr_accessor :username, :password, :repeat, :salt
   validates_presence_of :username, :password, :repeat
   validates :username, :length => { :in => 4..20 }
   validates :password, :length => { :in => 4..80 }
@@ -32,8 +33,9 @@ class User
     @@usercount
   end
   
-  def save
-    id = add_user(@username, @password)
+  def save(is_new=false)
+    make_salt if is_new
+    id = add_user
     if id
       @@usercount = id.to_i
       @userid = id
@@ -50,7 +52,7 @@ class User
   class << self # class methods like ActiveRecord
     def create(params)
       u = self.new(params)
-      u.save
+      u.save(IS_NEW)
       u
     end
     
@@ -58,9 +60,20 @@ class User
       id = Redstore::Auth.authenticate(params[:username], params[:password])
       if id
         params[:repeat] = params[:password]
+        params[:salt] = $redis.get usersalt_key(id)
         u = self.new(params, id)
       end
       u
     end
+    
+    def find(id)
+      # verify the id exists. Get unencrypted fields
+      salt_val = $redis.get usersalt_key(id)
+      if (salt_val)
+        params[:salt] = salt_val
+        params[:password] = params[:repeat] = "dummy" # keep validator happy
+        u = self.new(params, id)
+      end
+      u
   end
 end

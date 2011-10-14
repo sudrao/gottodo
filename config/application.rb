@@ -5,8 +5,6 @@ require "action_mailer/railtie"
 require "active_resource/railtie"
 #require "rails/test_unit/railtie"
 
-require 'oauth/rack/oauth_filter' # when using oauth-plugin
-
 if defined?(Bundler)
   # If you precompile assets before deploying to production, use this line
   Bundler.require *Rails.groups(:assets => %w(development test))
@@ -58,9 +56,6 @@ module Gottodo
       g.template_engine :erb
       g.test_framework  :rspec
     end
-    
-    # Rack filter for oauth-plugin
-    config.middleware.use OAuth::Rack::OAuthFilter
-    
+        
   end
 end

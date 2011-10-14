@@ -1,13 +1,29 @@
 module Redstore
   module Crypto
-    require 'digest/md5'
+    require 'digest/sha2'
 
-    def digest_of(pass)
-      md5 = Digest::MD5::new
-      md5.update("CR8TD89464789HJKI7212320K7423423jlUIUdf0") # secret
-      md5.update(pass)
-      md5.hexdigest
-    end
+    private
+
+      def encrypt_username
+        encrypt(username)
+      end
+      
+      def encrypt_password
+        encrypt(password)
+      end
+
+      def encrypt(string)
+        secure_hash("#{salt}--#{string}")
+      end
+
+      def make_salt
+        secure_hash("#{Time.now.utc}--#{password}")
+      end
+
+      def secure_hash(string)
+        Digest::SHA2.hexdigest(string)
+      end
+    
   end
   
   module Saver
@@ -17,11 +33,11 @@ module Redstore
     # We store all such instances in a set.
     # Method returns the id assigned to the user
     # We don't store clear text usernames or passwords
-    def add_user(username, password)
+    def add_user
       r = $redis
       instance = 0
-      hashname = digest_of(username)
-      pass = digest_of(password)
+      hashname = encrypt_username
+      pass = encrypt_password
       key = userlist_key(hashname)
       if(r.exists(key))
         # make sure the same username + password wasn't used
@@ -38,6 +54,7 @@ module Redstore
       r.set username_key(userid), hashname
       r.set userid_key(hashname, instance.to_s), userid
       r.set userpass_key(hashname, instance.to_s), pass
+      r.set usersalt_key(userid), salt
       return userid
     end  
   end

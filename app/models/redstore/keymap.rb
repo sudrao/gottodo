@@ -46,6 +46,10 @@ module Redstore
       "USER:#{id}:HASHNAME"
     end
 
+    def usersalt_key(id)
+      "USER::#{id}::SALT"
+    end
+    
     def pending_key(id)
       "TODOS:#{id}:PENDING"
     end

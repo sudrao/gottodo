@@ -7,5 +7,6 @@
     $redis = Redis.new redis_conf
   else
     $redis = Redis.new
+    puts "Initializing redis connection. Got $redis = " + $redis.inspect
   end
 
