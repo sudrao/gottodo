@@ -1,6 +1,6 @@
-class MainController < ApplicationController
+class MainsController < ApplicationController
   
-  def index
+  def show
      # haml :welcome
   end   
 

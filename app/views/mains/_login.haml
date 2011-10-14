@@ -1,0 +1,11 @@
+%form(action="/login" method="post")
+	%label Username:
+	%input(name="user" type="text"){:value => "#{@user}"}/ 
+	<br />
+	%label Password:
+	%input(name="password" type="password")/ 
+	<br />
+	%input(type="submit" value="Log in")/
+
+<br /><br />
+
