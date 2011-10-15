@@ -6,7 +6,8 @@
     redis_conf = {:host => redis['hostname'], :port => redis['port'], :password => redis['password']}
     $redis = Redis.new redis_conf
   else
-    $redis = Redis.new
+    redis_conf = {:port => Rails.env.test? ? 6378 : 6379}
+    $redis = Redis.new redis_conf
     puts "Initializing redis connection. Got $redis = " + $redis.inspect
   end
 

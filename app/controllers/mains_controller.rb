@@ -1,7 +1,6 @@
 class MainsController < ApplicationController
   
   def show
-     # haml :welcome
   end   
 
 =begin

@@ -11,6 +11,7 @@ class User
   @@usercount = $redis.get(Redstore::Keymap.usercount_key) # read initial value here
 
   attr_accessor :username, :password, :repeat, :salt
+  attr_reader :userid
   validates_presence_of :username, :password, :repeat
   validates :username, :length => { :in => 4..20 }
   validates :password, :length => { :in => 4..80 }
@@ -44,6 +45,7 @@ class User
       @userid = id
     else
       errors.add(:username, "Already exists")
+      return nil
     end
     self
   end
@@ -59,6 +61,7 @@ class User
       u = self.new(params)
       #      puts u.inspect
       u.save
+      u
     end
 
     def find_by_login(params)
