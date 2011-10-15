@@ -1,6 +1,40 @@
+# A module to make key string methods for Redis.
+#
+# Hint: See the spec file for examples of use
+#
+# Use:
+# 
+# class YourClass
+#   extend RedisKeySmith
+#
+#   # add an instance method that takes one parameter (number or string)
+#   # and returns a key string with that parameter embedded in it:
+#   # user_name_key("dodo", 5) #-> "USERdodo::NAME5::"
+#   rks_instance_make :user_name_key => 2
+#
+#   # Add a bunch of such methods. The value 1, 2, etc. are the number of parameters
+#   # that method will take.
+#   rks_instance_make :user_id_key => 1, :user_home_key => 2
+#
+#   # Add the same methods as class methods
+#   rks_class_make :user_id_key => 1, :user_home_key => 2
+#
+#   # Add other class methods which do not take any parameter
+#   rks_class_make :home_free, :need_to_ask
+#
+#   # Now use these methods
+#   def self.mine
+#     u = $redis.get home_free
+#     v = $redis.get user_id_key(5)
+#     w = $redis.get user_home_key("bebo", 22)
+#   end
+# 
+#   def hers
+#     x = $redis.get user_name_key("who", 10)
+#   end
+# end
+#
 module  RedisKeySmith
-
-
 
   def rks_instance_make(*params)
     rks_method_make(self, 'orig' => params)
