@@ -4,20 +4,27 @@ module Redstore
 
     private
 
-      def encrypt_username
-        encrypt(username)
+      def encrypt_username(name)
+        # Salt is not available until we find the username
+        # so use a fixed salt
+        fixed_salt = "f0c982f8e53f3ef08a52aa9af36aabfb335ac1bfc29d2ccb232606e364123d9a"
+        secure_hash("#{fixed_salt}--#{name}")
       end
       
       def encrypt_password
-        encrypt(password)
+        encrypt(self.password)
       end
 
       def encrypt(string)
+        secure_hash("#{self.salt}--#{string}")
+      end
+
+      def encrypt_with_salt(string, salt)
         secure_hash("#{salt}--#{string}")
       end
 
       def make_salt
-        secure_hash("#{Time.now.utc}--#{password}")
+        self.salt ||= secure_hash("#{Time.now.utc}--#{password}")
       end
 
       def secure_hash(string)
@@ -36,11 +43,12 @@ module Redstore
     def add_user
       r = $redis
       instance = 0
-      hashname = encrypt_username
+      hashname = encrypt_username(self.username)
       pass = encrypt_password
       key = userlist_key(hashname)
       if(r.exists(key))
         # make sure the same username + password wasn't used
+#        puts "Entry exists while adding"
         r.smembers(key).each do |inst|
           if pass == r.get(userpass_key(hashname, inst))
             return nil # sorry, exists
@@ -54,7 +62,9 @@ module Redstore
       r.set username_key(userid), hashname
       r.set userid_key(hashname, instance.to_s), userid
       r.set userpass_key(hashname, instance.to_s), pass
-      r.set usersalt_key(userid), salt
+      r.set usersalt_key(hashname), salt
+#      puts "username=#{username}, id=#{userid}, salt=#{salt}, pass=#{pass}"
+#      puts "Saved with userlist key=#{key}"
       return userid
     end  
   end
@@ -65,20 +75,26 @@ module Redstore
     extend Redstore::Keymap
     def self.authenticate(username, password)
       r = $redis
-      hashname = secure_hash(username)
-      pass = secure_hash(password)
+      hashname = encrypt_username(username)
       key = userlist_key(hashname)
+#      puts "Searching for key=#{key}"
       userid = nil
+      salt = nil
       if r.exists(key)
+#        puts "hey found a matching username"
+        # get the salt
+        salt = r.get usersalt_key(hashname)
+        pass = encrypt_with_salt(password, salt)
         r.smembers(key).each do |inst|
           if (pass == r.get(userpass_key(hashname, inst)))
+#            puts "Match found for password"
             userid = r.get(userid_key(hashname, inst))
             break
           end
         end
       end
-#      puts userid.inspect
-      userid
+#      puts "Got id='#{userid}'"
+      return userid, salt
     end
   end
 end

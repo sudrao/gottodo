@@ -13,4 +13,16 @@ describe User do
     User.create(@params)
     User.find_by_login(@params).should_not be(nil)
   end
+  
+  it "fails to create duplicate user" do
+    User.create(@params)
+    User.create(@params).should have(1).error
+  end
+  
+  it "can create two users with same username (password different)" do
+    User.create(@params)
+    @params[:password] = "secret_other"
+    User.create(@params).should have(:no).errors
+  end
+    
 end

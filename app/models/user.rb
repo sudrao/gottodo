@@ -25,7 +25,7 @@ class User
   end
 
   def must_repeat_password
-    errors.add("The entered passwords are not the same.") unless
+    errors.add(:password, "The entered passwords are not the same.") unless
     username == repeat
   end
 
@@ -34,13 +34,19 @@ class User
   end
 
   def save(is_new=false)
-    make_salt if is_new
-    id = add_user
-    if id
-      @@usercount = id.to_i
-      @userid = id
+    if is_new
+      make_salt
+      id = add_user
+      if id
+        @@usercount = id.to_i
+        @userid = id
+      else
+        errors.add(:username, "Already exists")
+      end
+    else
+      # at this time there are no attributes that can change
     end
-    id
+    @userid
   end
 
 
@@ -52,29 +58,28 @@ class User
   class << self # class methods like ActiveRecord
     def create(params)
       u = self.new(params)
+#      puts u.inspect
       u.save(IS_NEW)
       u
     end
 
     def find_by_login(params)
-      id = Redstore::Auth.authenticate(params[:username], params[:password])
+      id, salt = Redstore::Auth.authenticate(params[:username], params[:password])
       if id
         params[:repeat] = params[:password]
-        params[:salt] = $redis.get usersalt_key(id)
+        params[:salt] = salt
         u = self.new(params, id)
       end
       u
     end
 
     def find(id)
-      # verify the id exists. Get unencrypted fields
-      salt_val = $redis.get usersalt_key(id)
-      if (salt_val)
-        params[:salt] = salt_val
-        params[:password] = params[:repeat] = "dummy" # keep validator happy
-        u = self.new(params, id)
-      end
-      u
+      # verify the id exists. Get encrypted fields
+      r = $redis
+      hashname = r.get username_key(id)
+      salt = r.get usersalt_key(hashname)
+      params = {salt: salt}
+      u = self.new(params, id)
     end
   end
 end
