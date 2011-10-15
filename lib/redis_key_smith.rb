@@ -1,9 +1,11 @@
 # A module to make key string methods for Redis.
 #
-# Hint: See the spec file for examples of use
+# Hint: See the spec file for more examples of use
 #
 # Use:
 # 
+# require 'redis_key_smith'
+#
 # class YourClass
 #   extend RedisKeySmith
 #
@@ -27,10 +29,11 @@
 #     u = $redis.get home_free
 #     v = $redis.get user_id_key(5)
 #     w = $redis.get user_home_key("bebo", 22)
+#     x = $redis.get user_id_key(7)
 #   end
 # 
 #   def hers
-#     x = $redis.get user_name_key("who", 10)
+#     y = $redis.get user_name_key("who", 10)
 #   end
 # end
 #

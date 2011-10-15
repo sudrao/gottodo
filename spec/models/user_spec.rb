@@ -21,8 +21,9 @@ describe User do
   
   it "can create two users with same username (password different)" do
     User.create(@params)
-    @params[:password] = "secret_other"
-    User.create(@params).should have(:no).errors
+    other = @params.clone
+    other[:password] = "secret_other"
+    User.create(other).should have(:no).errors
+    User.find_by_login(@params).should_not be(nil)
   end
-    
 end

@@ -4,35 +4,41 @@ module Redstore
 
     private
 
-      def encrypt_username(name)
-        # Salt is not available until we find the username
-        # so use a fixed salt
-        fixed_salt = "f0c982f8e53f3ef08a52aa9af36aabfb335ac1bfc29d2ccb232606e364123d9a"
-        secure_hash("#{fixed_salt}--#{name}")
-      end
-      
-      def encrypt_password
-        encrypt(self.password)
-      end
+    def encrypt_username(name)
+      # Salt is not available until we find the username
+      # so use a fixed salt
+      fixed_salt = "f0c982f8e53f3ef08a52aa9af36aabfb335ac1bfc29d2ccb232606e364123d9a"
+      secure_hash("#{fixed_salt}--#{name}")
+    end
 
-      def encrypt(string)
-        secure_hash("#{self.salt}--#{string}")
-      end
+    def encrypt_password
+      encrypt(self.password)
+    end
 
-      def encrypt_with_salt(string, salt)
-        secure_hash("#{salt}--#{string}")
-      end
+    def encrypt(string)
+      secure_hash("#{self.salt}--#{string}")
+    end
 
-      def make_salt
-        self.salt ||= secure_hash("#{Time.now.utc}--#{password}")
-      end
+    def encrypt_with_salt(string, salt)
+      secure_hash("#{salt}--#{string}")
+    end
 
-      def secure_hash(string)
-        Digest::SHA2.hexdigest(string)
+    def make_salt
+      self.salt = secure_hash("#{Time.now.utc}--#{password}")
+    end
+
+    def make_or_get_salt
+      unless self.salt
+        self.salt = Auth.get_salt(self.username)
+        make_salt unless self.salt
       end
-    
+    end
+    def secure_hash(string)
+      Digest::SHA2.hexdigest(string)
+    end
+
   end
-  
+
   module Saver
     include Crypto
     # We allow duplicate user names
@@ -48,7 +54,7 @@ module Redstore
       key = userlist_key(hashname)
       if(r.exists(key))
         # make sure the same username + password wasn't used
-#        puts "Entry exists while adding"
+        #        puts "Entry exists while adding"
         r.smembers(key).each do |inst|
           if pass == r.get(userpass_key(hashname, inst))
             return nil # sorry, exists
@@ -63,8 +69,8 @@ module Redstore
       r.set userid_key(hashname, instance.to_s), userid
       r.set userpass_key(hashname, instance.to_s), pass
       r.set usersalt_key(hashname), salt
-#      puts "username=#{username}, id=#{userid}, salt=#{salt}, pass=#{pass}"
-#      puts "Saved with userlist key=#{key}"
+      #      puts "username=#{username}, id=#{userid}, salt=#{salt}, pass=#{pass}"
+      #      puts "Saved with userlist key=#{key}"
       return userid
     end  
   end
@@ -77,30 +83,35 @@ module Redstore
       r = $redis
       hashname = encrypt_username(username)
       key = userlist_key(hashname)
-#      puts "Searching for key=#{key}"
+      #      puts "Searching for key=#{key}"
       userid = nil
       salt = nil
       if r.exists(key)
-#        puts "hey found a matching username"
+        #        puts "hey found a matching username"
         # get the salt
         salt = r.get usersalt_key(hashname)
         pass = encrypt_with_salt(password, salt)
         r.smembers(key).each do |inst|
           if (pass == r.get(userpass_key(hashname, inst)))
-#            puts "Match found for password"
+            #            puts "Match found for password"
             userid = r.get(userid_key(hashname, inst))
             break
           end
         end
       end
-#      puts "Got id='#{userid}'"
+      #      puts "Got id='#{userid}'"
       return userid, salt
+    end
+
+    def self.get_salt(username)
+      hashname = encrypt_username(username)
+      $redis.get usersalt_key(hashname) 
     end
   end
 end
 
-#puts secure_hash("MyPass")
-#puts secure_hash("")
-#puts secure_hash("HisPass")
-#puts secure_hash("MyPass")
+  #puts secure_hash("MyPass")
+  #puts secure_hash("")
+  #puts secure_hash("HisPass")
+  #puts secure_hash("MyPass")
 

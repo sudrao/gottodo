@@ -33,20 +33,19 @@ class User
     @@usercount
   end
 
-  def save(is_new=false)
-    if is_new
-      make_salt
-      id = add_user
-      if id
-        @@usercount = id.to_i
-        @userid = id
-      else
-        errors.add(:username, "Already exists")
-      end
+  # Save a new user record. Since we don't save the username
+  # in the clear but need to have that field for other things
+  # this method cannnot be called to update a user record.
+  def save
+    make_or_get_salt # salt is per username but usernames are not unique
+    id = add_user # id is unique (one per username+password combination)
+    if id
+      @@usercount = id.to_i
+      @userid = id
     else
-      # at this time there are no attributes that can change
+      errors.add(:username, "Already exists")
     end
-    @userid
+    self
   end
 
 
@@ -58,9 +57,8 @@ class User
   class << self # class methods like ActiveRecord
     def create(params)
       u = self.new(params)
-#      puts u.inspect
-      u.save(IS_NEW)
-      u
+      #      puts u.inspect
+      u.save
     end
 
     def find_by_login(params)
