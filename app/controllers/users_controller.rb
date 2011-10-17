@@ -5,10 +5,9 @@ class UsersController < ApplicationController
     @user = User.new(params[:user])
     
     if @user.save
-      flash[:notice] = "Congratulations! Your account is created."
-      redirect_to "mains#show"
+      redirect_to "/main", :notice => "Congratulations! Your account is created."
     else
-      render "login#show"
+      render "mains/show"
     end
   end
   

@@ -1,0 +1,21 @@
+%br/
+- if @user.errors.any?
+  .error
+    - @user.errors.full_messages.each do |msg|
+      = msg
+- unless signed_in?
+  #heading.middle.back
+    Got todo? You've come to the right place!
+
+  #sub-heading.middle.back
+    Manage your tasks and "to do" items here.<br /><br />
+
+  .middle.front
+    Have an account?<br />
+    = render partial: "mains/login"
+
+    New here? Create a username/password<br />
+    = render partial: "mains/add_account"
+- else
+  Fantastic! You are in.
+

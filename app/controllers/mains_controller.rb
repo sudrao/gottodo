@@ -1,6 +1,7 @@
 class MainsController < ApplicationController
   
   def show
+    @user = User.new
   end   
 
 =begin

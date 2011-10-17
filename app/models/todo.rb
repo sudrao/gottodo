@@ -1,37 +1,49 @@
 class Todo
   include ActiveModel::Validations
   include ActiveModel::Conversion
-   
-  attr_accessor :description, :start_time
-  validates_presence_of :description, :start_time
-  
-  def initialize(attr = {})
+  include Redstore::Keymap
+  include Redstore::Saver
+
+  attr_accessor :body, :start, :recur
+  attr_reader :userid, :todo_id
+  validates_presence_of :body, :start, :recur
+
+  def initialize(attr = {}, userid=nil, id=nil)
     attr.each do |attr_name, value|
+      value = DateTime.parse(value) if attr_name == :start
       # construct method name from variable content
       send("#{attr_name}=", value)
     end
+    @userid = userid
+    @todo_id = id
   end
- 
+
   # This method allows use of url helpers without a standard db
   def persisted?
     false
   end
-  
-  def add_a_todo
-    if valid_user?
-      r = @@redis
-      userid = session[:user]
-      pendkey = pending_key(userid)
-      todo_id = r.incr todocount_key()
-      r.sadd pendkey, todo_id # add the new id to list
-      r.set todobody_key(todo_id), params[:body]
-      r.set todostart_key(todo_id), DateTime.parse(params[:start]).to_s
-      r.set todorecur_key(todo_id), params[:recur].blank? ? 0 : DateTime.parse(params[:recur])
-      @message = "To do added"
-      redirect "/#{userid}-#{r.get basename_key(userid)}"
-    else
-      redirect "/login"
-    end
+
+  def save
+    @todo_id = add_todo
   end
   
+  class <<self
+    def create(params, userid)
+      t = self.new(params, userid)
+      #      puts t.inspect
+      t.save
+      t
+    end
+    
+    def find(todo_id)
+      r = $redis
+      body = r.get Redstore::Keymap.todobody_key(todo_id)
+      start = r.get Redstore::Keymap.todostart_key(todo_id)
+      recur = r.get Redstore::Keymap.todorecur_key(todo_id)
+      userid = r.get Redstore::Keymap.todouser_key(todo_id)
+      # TODO Should have used JSON
+      self.new({body: body, start: start, recur: recur}, userid, todo_id)
+    end
+  end
 end
+

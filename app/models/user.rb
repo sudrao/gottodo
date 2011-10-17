@@ -6,7 +6,6 @@ class User
   include ActiveModel::Conversion
   include Redstore::Keymap
   include Redstore::Saver
-  IS_NEW = true
 
   @@usercount = $redis.get(Redstore::Keymap.usercount_key) # read initial value here
 
@@ -67,13 +66,19 @@ class User
     def find_by_login(params)
       id, salt = Redstore::Auth.authenticate(params[:username], params[:password])
       if id
-        params[:repeat] = params[:password]
         params[:salt] = salt
         u = self.new(params, id)
       end
       u
     end
 
+    def authenticate_with_salt(userid, salt)
+      if salt == Redstore::Auth.get_salt_by_id(userid)
+        u = self.new({:salt => salt}, userid)
+      end
+      u
+    end
+    
     def find(id)
       # verify the id exists. Get encrypted fields
       r = $redis

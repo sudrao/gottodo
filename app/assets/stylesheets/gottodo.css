@@ -1,8 +1,14 @@
-#error {
+#flash_error {
   color:red;
   font-size:1.2em;
 }
-#message {
+
+.error {
+  color:red;
+  font-size:1.2em;
+}
+
+#flash_notice {
   color:green;
   font-size:1.2em;
 }

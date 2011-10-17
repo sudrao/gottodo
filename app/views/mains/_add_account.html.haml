@@ -1,15 +1,15 @@
-%form(action="/user" method="post")
-	%label Username:
-	%input(name="user" type="text"){:value => "#{@user}"}/ 
-	<br />
-	%label Password:
-	%input(name="password" type="password")/ 
-	<br />
-	%label Enter password again:
-	%input(name="repeat" type="password")/ 
-	<br />
-	%input(type="submit" value="Create Account")/ 
-	<br />
+= form_for(@user) do |f|
+  = f.label 'Username:'
+  = f.text_field :username
+  <br />
+  = f.label 'Password:'
+  = f.password_field :password
+  <br />
+  = f.label 'Enter password again:'
+  = f.password_field :repeat
+  <br />
+  = f.submit :value => "Create Account"
+  <br />
 
 Note: We only store encrypted (MD5 hash of) usernames and passwords<br />
 If you forget either, you will have to start over. Data is not<br />

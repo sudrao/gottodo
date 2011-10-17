@@ -73,6 +73,18 @@ module Redstore
       #      puts "Saved with userlist key=#{key}"
       return userid
     end  
+    
+    def add_todo
+      r = $redis
+      pendkey = pending_key(userid)
+      todo_id = r.incr todocount_key() # get a new todo id
+      r.sadd pendkey, todo_id # add the new id to list
+      r.set todobody_key(todo_id), self.body
+      r.set todostart_key(todo_id), self.start
+      r.set todorecur_key(todo_id), self.recur
+      r.set todouser_key(todo_id), self.userid
+      todo_id
+    end
   end
 
   require File.dirname(__FILE__) + '/keymap'
@@ -107,6 +119,13 @@ module Redstore
       hashname = encrypt_username(username)
       $redis.get usersalt_key(hashname) 
     end
+    
+    def self.get_salt_by_id(userid)
+      r = $redis
+      hashname = r.get username_key(userid)
+      r.get usersalt_key(hashname)
+    end
+    
   end
 end
 
