@@ -28,7 +28,7 @@ RSpec.configure do |config|
 end
 
 def cleanup_db
-  $redis.flushdb
+  $redis.flushall
 end
 
 def reset_rails_errors

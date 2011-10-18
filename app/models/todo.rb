@@ -1,8 +1,13 @@
+require 'redis_key_smith'
+require 'redstore/passwords'
 class Todo
   include ActiveModel::Validations
   include ActiveModel::Conversion
-  include Redstore::Keymap
+  extend ::RedisKeySmith
   include Redstore::Saver
+
+  rks_make_key :todocount_key
+  rks_make_key :todostart_key, :todobody_key, :todorecur_key, :todouser_key, :pending_key, args: 1, instance_method: true, class_method: true
 
   attr_accessor :body, :start, :recur
   attr_reader :userid, :todo_id
@@ -37,10 +42,10 @@ class Todo
     
     def find(todo_id)
       r = $redis
-      body = r.get Redstore::Keymap.todobody_key(todo_id)
-      start = r.get Redstore::Keymap.todostart_key(todo_id)
-      recur = r.get Redstore::Keymap.todorecur_key(todo_id)
-      userid = r.get Redstore::Keymap.todouser_key(todo_id)
+      body = r.get todobody_key(todo_id)
+      start = r.get todostart_key(todo_id)
+      recur = r.get todorecur_key(todo_id)
+      userid = r.get todouser_key(todo_id)
       # TODO Should have used JSON
       self.new({body: body, start: start, recur: recur}, userid, todo_id)
     end

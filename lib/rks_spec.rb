@@ -1,12 +1,15 @@
-require './redis_key_smith'
+require 'redis_key_smith'
 class RKSTest
   extend RedisKeySmith
   
-  self.rks_instance_make('user_name_key' => 2, :full_name => 3, :how => 1, 'how_did_we_get_here' => 2)
-  self.rks_instance_make('user_name_build', 'how_did_we_get_there', 'more')
+  self.rks_make_key('user_name_key', 'how_did_we_get_here', :args => 2, :instance_method => true, :class_method => true)
+  self.rks_make_key(:full_name, :args => 3)
+  self.rks_make_key(:how, args: 1, instance_method: true)
+  self.rks_make_key('user_name_build', 'how_did_we_get_there', 'more')
   
-  self.rks_class_make('user_name_key' => 2, :full_name => 3, :how => 1, 'how_did_we_get_here' => 2)
-  self.rks_class_make('user_name_build', 'how_did_we_get_there', 'more')
+  self.rks_make_key(:full_name, :args => 3, :class_method => true)
+  self.rks_make_key(:how, :args => 1, :class_method => true)
+  self.rks_make_key('user_name_build', 'how_did_we_get_there', 'more', :class_method => true)
 end
 
 describe "Redis Key Smith" do
@@ -34,4 +37,8 @@ describe "Redis Key Smith" do
     RKSTest.more.should == "MORE"    
   end
 
+  it "raises error if args don't match count of args" do
+    lambda { @a.full_name(1, 2) }.should raise_error(ArgumentError)
+    lambda { @a.full_name(1, 2, 3, 4) }.should raise_error(ArgumentError)
+  end
 end

@@ -63,7 +63,7 @@ module Redstore
         instance = r.scard(key) # get number of instances
       end
       r.sadd(key, instance.to_s)
-      userid = r.incr(Redstore::Keymap.usercount_key) # get a new id
+      userid = r.incr(usercount_key) # get a new id
       r.set userinst_key(userid), instance.to_s
       r.set username_key(userid), hashname
       r.set userid_key(hashname, instance.to_s), userid
@@ -90,7 +90,11 @@ module Redstore
   require File.dirname(__FILE__) + '/keymap'
   module Auth
     extend Crypto
-    extend Redstore::Keymap
+    extend ::RedisKeySmith
+    
+    rks_make_key :usersalt_key, :userlist_key, args: 1, class_method: true
+    rks_make_key :userid_key, :userpass_key, args: 2, class_method: true
+    
     def self.authenticate(username, password)
       r = $redis
       hashname = encrypt_username(username)
@@ -99,19 +103,17 @@ module Redstore
       userid = nil
       salt = nil
       if r.exists(key)
-        #        puts "hey found a matching username"
         # get the salt
         salt = r.get usersalt_key(hashname)
         pass = encrypt_with_salt(password, salt)
         r.smembers(key).each do |inst|
           if (pass == r.get(userpass_key(hashname, inst)))
-            #            puts "Match found for password"
             userid = r.get(userid_key(hashname, inst))
             break
           end
         end
       end
-      #      puts "Got id='#{userid}'"
+      # puts "Got id='#{userid}'"
       return userid, salt
     end
 

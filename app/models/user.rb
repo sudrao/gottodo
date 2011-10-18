@@ -1,13 +1,16 @@
+require 'redis_key_smith'
 require 'redstore/passwords'
-#require 'redstore/keymap'
-
 class User
   include ActiveModel::Validations
   include ActiveModel::Conversion
-  include Redstore::Keymap
+  extend ::RedisKeySmith
   include Redstore::Saver
+  
+  rks_make_key :usercount_key, :tokencount_key, instance_method: true, class_method: true
+  rks_make_key :userlist_key, :userinst_key, :username_key, :usersalt_key, args: 1
+  rks_make_key :userid_key, :userpass_key, args: 2
 
-  @@usercount = $redis.get(Redstore::Keymap.usercount_key) # read initial value here
+  @@usercount = $redis.get(usercount_key) # read initial value here
 
   attr_accessor :username, :password, :repeat, :salt
   attr_reader :userid
@@ -83,7 +86,7 @@ class User
       # verify the id exists. Get encrypted fields
       r = $redis
       hashname = r.get username_key(id)
-      salt = r.get usersalt_key(hashname)
+      salt = r.get Redstore::Auth.usersalt_key(hashname)
       params = {salt: salt}
       u = self.new(params, id)
     end
