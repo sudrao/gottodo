@@ -29,7 +29,7 @@ class User
 
   def must_repeat_password
     errors.add(:password, "The entered passwords are not the same.") unless
-    username == repeat
+      username == repeat
   end
 
   def usercount
