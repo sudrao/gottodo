@@ -11,13 +11,15 @@ class User < Ohm::Model
   # add attributes to validate but not save
   attr_accessor :password, :repeat
 
-  def initialize(params={})
-    new_params = params.clone
+  def initialize(attrs={})
+    params = attrs.clone
     if (params[:password] && params[:userhash])
       passhash = User.encrypt(params[:password], params[:userhash].salt)
-      new_params[:passhash] = passhash
+      params[:passhash] = passhash
     end
-    super(new_params)
+    super(params)
+    self.password = params.delete(:password)
+    self.repeat = params.delete(:repeat)
   end
 
   def validate
@@ -26,30 +28,28 @@ class User < Ohm::Model
     assert_present :repeat
     # This passhash must not exist for the same
     # userhash
-   #  puts "Got userhash = " + self.userhash.inspect
-    # self.userhash.users.each do |user|
-    #   if user.passhash == self.passhash
-    #     errors << [[:passhash], [:not_unique]] 
-    #     break;
-    #   end
-    # end
+    #  puts "Got userhash = " + self.userhash.inspect
+    self.userhash.users.each do |user|
+      if user.passhash == self.passhash
+        errors << [[:passhash], [:not_unique]] 
+        break;
+      end
+    end
     errors << [[:password], [:not_matching]] unless
-    password == repeat
+      password == repeat
   end
 
   def save
     super
-    self.userhash << self
+    self.userhash.users.add(self)
   end
   
   class << self # class methods like ActiveRecord
     def find_by_login(params)
-      id, salt = Redstore::Auth.authenticate(params[:username], params[:password])
-      if id
-        params[:salt] = salt
-        u = self.new(params, id)
-      end
-      u
+      # first find the username by its hash
+      uh = Userhash.find(:hashname => encrypt_username(params[:username])).first
+      passhash = encrypt(params[:password], uh.salt) if uh
+      uh.users.find(:passhash => passhash).first
     end
 
     def authenticate_with_salt(userid, salt)

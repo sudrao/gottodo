@@ -10,7 +10,7 @@ class Userhash < Ohm::Model
   # find a user, so the password's salt is per userhash.
   attribute :hashname
   attribute :salt
-  set :users, User
+  collection :users, User
   
   index :hashname
   
