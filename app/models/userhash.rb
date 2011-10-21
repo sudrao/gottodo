@@ -17,21 +17,23 @@ class Userhash < Ohm::Model
   # The parameter that comes in is a username
   # and gets hashed but not saved.
   def initialize(params={})
-    salt = Userhash.make_salt 
-    new_params = {:salt => salt}
     if params[:username]
       hashname = Userhash.encrypt_username(params[:username])
-      new_params[:hashname] = hashname
+      params[:hashname] = hashname
+      params.delete(:username)
+      salt = Userhash.make_salt 
+      params[:salt] = salt
     end
-    super(new_params)
+    super(params)
   end
   
   def validate
-    assert_present :hashname, :salt
+    assert_present :hashname
+    assert_present :salt
     assert_unique :hashname
   end
   
-  def self.find_by_username(name)
-    find(:hashname => encrypt_username(name))
-  end
+  # def self.find_by_username(name)
+  #   find(:hashname => encrypt_username(name))
+  # end
 end

@@ -9,9 +9,17 @@ describe Userhash do
     Userhash.create(@params).should have(:no).errors
   end
   
+  it "saves and finds a userhash" do
+    uh = Userhash.create(@params)
+    uh.id.should == "1"
+    Userhash['1'].salt.should == uh.salt
+    Userhash['1'].hashname.should == uh.hashname    
+  end
+  
   it "validates username present" do
     uh = Userhash.new()
     uh.should_not be_valid
+    uh.errors.should == [[:hashname, :not_present], [:salt, :not_present]]
   end
   
   it "fails to save duplicate" do

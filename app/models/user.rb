@@ -1,54 +1,48 @@
 require 'redstore/passwords'
 class User < Ohm::Model
+  extend Redstore::Crypto
   include Redstore::Saver
 
   # attributes saved in redis
   attribute :passhash # hashed password
-  collection :userhashes, Userhash # we should not need this reverse reference
+  reference :userhash, Userhash
+  index :passhash
   
-  # attributes not saved in redis
-  attr_accessor :username, :password, :repeat
-  
-  # validates_presence_of :username, :password, :repeat, :only => :create
-  # validates :username, :length => { :in => 4..20 }, :only => :create
-  # validates :password, :length => { :in => 4..80 }, :only => :create
-  # validate :must_repeat_password, :only => :create
+  # add attributes to validate but not save
+  attr_accessor :password, :repeat
 
-  def must_repeat_password
-    errors.add(:password, "The entered passwords are not the same.") unless
-      username == repeat
+  def initialize(params={})
+    new_params = params.clone
+    if (params[:password] && params[:userhash])
+      passhash = User.encrypt(params[:password], params[:userhash].salt)
+      new_params[:passhash] = passhash
+    end
+    super(new_params)
   end
 
-  # Save a new user record. Since we don't save the username
-  # in the clear but need to have that field for other things
-  # this method cannnot be called to update a user record.
+  def validate
+    assert_present :passhash
+    assert_present :password
+    assert_present :repeat
+    # This passhash must not exist for the same
+    # userhash
+   #  puts "Got userhash = " + self.userhash.inspect
+    # self.userhash.users.each do |user|
+    #   if user.passhash == self.passhash
+    #     errors << [[:passhash], [:not_unique]] 
+    #     break;
+    #   end
+    # end
+    errors << [[:password], [:not_matching]] unless
+    password == repeat
+  end
+
   def save
-    make_or_get_salt # salt is per username but usernames are not unique
-    id = add_user # id is unique (one per username+password combination)
-    if id
-      @@usercount = id.to_i
-      @userid = id
-    else
-      errors.add(:username, "Already exists")
-      return nil
-    end
-    self
+    super
+    self.userhash << self
   end
-
-
-  # This method allows use of url helpers without a standard db
-  def persisted?
-    false
-  end
-
+  
   class << self # class methods like ActiveRecord
-    def create(params)
-      u = self.new(params)
-      #      puts u.inspect
-      u.save
-      u
-    end
-
     def find_by_login(params)
       id, salt = Redstore::Auth.authenticate(params[:username], params[:password])
       if id
@@ -63,15 +57,6 @@ class User < Ohm::Model
         u = self.new({:salt => salt}, userid)
       end
       u
-    end
-    
-    def find(id)
-      # verify the id exists. Get encrypted fields
-      r = $redis
-      hashname = r.get username_key(id)
-      salt = r.get Redstore::Auth.usersalt_key(hashname)
-      params = {salt: salt}
-      u = self.new(params, id)
     end
   end
 end

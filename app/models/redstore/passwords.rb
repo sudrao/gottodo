@@ -9,10 +9,6 @@ module Redstore
       secure_hash("#{@@fixed_salt}--#{name}")
     end
 
-    def encrypt_password
-      encrypt(self.password)
-    end
-
     def encrypt(string, salt)
       secure_hash("#{salt}--#{string}")
     end
@@ -22,7 +18,7 @@ module Redstore
     end
 
     def make_salt
-      secure_hash("#{Time.now.utc}")
+      secure_hash("#{Time.now.utc}" + rand(10000).to_s)
     end
 
     # def make_or_get_salt
