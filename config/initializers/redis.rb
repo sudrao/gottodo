@@ -7,7 +7,8 @@
     $redis = Redis.new redis_conf
   else
     redis_conf = {:port => Rails.env.test? ? 6378 : 6379}
-    $redis = Redis.new redis_conf
+    Ohm.connect(redis_conf)
+    $redis = Ohm.redis
     puts "Initializing redis connection. Got $redis = " + $redis.inspect
   end
 

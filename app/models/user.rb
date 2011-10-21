@@ -1,39 +1,22 @@
-require 'redis_key_smith'
 require 'redstore/passwords'
-class User
-  include ActiveModel::Validations
-  include ActiveModel::Conversion
-  extend ::RedisKeySmith
+class User < Ohm::Model
   include Redstore::Saver
+
+  # attributes saved in redis
+  attribute :passhash # hashed password
+  collection :userhashes, Userhash # we should not need this reverse reference
   
-  rks_make_key :usercount_key, :tokencount_key, instance_method: true, class_method: true
-  rks_make_key :userlist_key, :userinst_key, :username_key, :usersalt_key, args: 1
-  rks_make_key :userid_key, :userpass_key, args: 2
-
-  @@usercount = $redis.get(usercount_key) # read initial value here
-
-  attr_accessor :username, :password, :repeat, :salt
-  attr_reader :userid
-  validates_presence_of :username, :password, :repeat
-  validates :username, :length => { :in => 4..20 }
-  validates :password, :length => { :in => 4..80 }
-  validate :must_repeat_password
-
-  def initialize(attr = {}, id=nil)
-    attr.each do |attr_name, value|
-      # construct method name from variable content
-      send("#{attr_name}=", value)
-    end
-    @userid = id
-  end
+  # attributes not saved in redis
+  attr_accessor :username, :password, :repeat
+  
+  # validates_presence_of :username, :password, :repeat, :only => :create
+  # validates :username, :length => { :in => 4..20 }, :only => :create
+  # validates :password, :length => { :in => 4..80 }, :only => :create
+  # validate :must_repeat_password, :only => :create
 
   def must_repeat_password
     errors.add(:password, "The entered passwords are not the same.") unless
       username == repeat
-  end
-
-  def usercount
-    @@usercount
   end
 
   # Save a new user record. Since we don't save the username

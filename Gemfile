@@ -11,6 +11,7 @@ gem 'evernote'
 gem 'oauth'
 gem 'hpricot'
 gem 'haml-rails'
+gem 'ohm'
 
 # Gems used only for assets and not required
 # in production environments by default.
