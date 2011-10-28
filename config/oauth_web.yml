@@ -2,13 +2,14 @@
 username: sudtest
 password: hyderabad
 evernote:
-  key: sudtest-2693
-  secret: b82e369d1e86f45a
-  client: :oauth_gem
-  expose: false
-  allow_login: true
-  site: https://sandbox.evernote.com
-  request_token_path: /oauth
-  access_token_path: /oauth
-  authorize_path: /OAuth.action
+  key: sudtest-7942
+  secret: d89a2b1b4930c071
+  options:
+    client: :oauth_gem
+    expose: false
+    allow_login: true
+    site: https://sandbox.evernote.com
+    request_token_path: /oauth
+    access_token_path: /oauth
+    authorize_path: /OAuth.action
   

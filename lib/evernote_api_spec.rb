@@ -2,21 +2,107 @@ require File.expand_path(File.dirname(__FILE__) + "/../spec/spec_helper.rb")
 require 'yaml'
 CREDENTIALS_FILE = Rails.root.join('config', 'oauth_web.yml')
 require ::Rails.root.join('lib', 'evernote_api.rb')
+EVERNOTE_LOGIN_URL = '/Login.action'
+EVERNOTE_USER = 'sudtest1'
+DUMMY_CALLBACK = "http://dummy.callback.url/"
 
 describe EvernoteAPI do
   before(:all) do
     @credentials = YAML::load_file(CREDENTIALS_FILE);
   end
   
-  it "gets authorization" do
-    req = EvernoteAPI::Request.new(@credentials[:evernote], "http://dummy.callback.url/")
+  def request
+    EvernoteAPI::Request.new(@credentials['evernote'], DUMMY_CALLBACK)
+  end
+
+  def connect(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    http
+  end
+  
+  def get_cookies(str, cookies={})
+    return cookies unless str
+    assigns = str.split(/[;,]/)
+    assigns.each do |a|
+      # skip attributes
+      next if a[/(Domain|Path|Expire|Secure|HttpOnly|Max-Age|Version|deleteme)/i]
+      cookies[a[/[^ =]+/]] = a[/=([^ ]+)/, 1] unless a.blank?
+    end
+    cookies
+  end
+  
+  def cookies_to_s(cookies)
+    str = ''
+    cookies.each do |k, v|
+      str << "#{k}=#{v}; "
+    end
+    str
+  end
+  
+  it "gets authorization url" do
+    req = request()
     req.should_not be_nil
     link = req.authorize_url
-    # Save request token essentials to use during create
-    rtoken = req.request_token.token
-    rsecret = req.request_token.secret
-    link.should == nil
+    link.should =~ /.*oauth_token=.*/
   end
+  
+  it "authorizes and gets verifier" do
+    req = request()
+    link = req.authorize_url
+    token = req.request_token
+    puts link
+    auth_uri = URI.parse(link)
+    http = connect(auth_uri)
+    # Go to the uri to get redirect to login page
+    response = http.get(auth_uri.request_uri)
+    response.code.should == '302'
+    uri = URI.parse(response['location'])
+    response = http.get(uri.request_uri)
+    response.code.should == '200'
+    cookies = get_cookies(response['set-cookie'])
+    # uri.request_uri.should == "hello"
+    # log in as Evernote user and get the cookies
+    post_request = Net::HTTP::Post.new(uri.request_uri[/\A[^?]+/])
+    post_request.set_form_data({
+      'username' => EVERNOTE_USER, 'password' => @credentials['password'], 'remember' => 'true',
+      'login' => 'Sign in', 'targetUrl' => auth_uri.request_uri
+      })
+    post_request['Cookie'] = cookies_to_s(cookies) if cookies != {}
+    # http.set_debug_output($stderr)
+    response = http.request(post_request)
+    response.code.should == '302'
+    get_cookies(response['set-cookie'], cookies)
+    cookies_to_s(cookies).should =~ /.*SESSION.*/
+    uri = URI.parse(response['location'])
+    # Load the authorize page and get other cookies
+    get_request = Net::HTTP::Get.new(uri.request_uri)
+    get_request['Cookie'] = cookies_to_s(cookies)
+    response = http.request(get_request)
+    response.code.should == '200'
+    get_cookies(response['set-cookie'], cookies)
+    # Authorize
+    post_request = Net::HTTP::Post.new(auth_uri.request_uri[/\A[^?]+/])
+    post_request.set_form_data(
+      { 'authorize' => 'Authorize', 'embed' => 'false', 'oauth_token' => token, 'oauth_callback' => DUMMY_CALLBACK }
+      )
+    post_request['Cookie'] = cookies_to_s(cookies)
+    http.set_debug_output($stderr)
+    response = http.request(post_request)
+    
+    response.code.should == '302'
+    response['location'].should =~ /#{DUMMY_CALLBACK}.*/
+    # Now log in
+    #post_request = Net::HTTP::Post.new(uri.request_url)
+    
+  end
+  
+  # it "can access an account" do
+  #   # Recreate consumer and request token that was used in new action
+  #   req = TwitterAPI::Request.new(credentials, session[:rtoken], session[:rsecret])
+  #   
+  # end
 end
 =begin
     @twitter = true

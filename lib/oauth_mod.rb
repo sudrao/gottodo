@@ -9,12 +9,11 @@ class Base
   attr_reader :consumer
   attr_accessor :proxy
   
-  # Set proxy to nil before instantiating, if there is no proxy. Not tested
-  @@proxy = nil
-  
-  def initialize(consumer_key, consumer_secret, site)
+  def initialize(consumer_key, consumer_secret, options)
     @consumer = OAuth::Consumer.new(consumer_key, consumer_secret,
-      {:site => site, :proxy => @@proxy})
+      options)
+    # Enable debugging
+    # @consumer.http.set_debug_output($stderr)
   end
   
   # Return the response from site.
@@ -53,7 +52,7 @@ module Request
   # Access.new returns the URL for the user to go to
   # Pass in old request token/secret if recreating a request token
   def initialize(credentials, callback_url, req_token=nil)
-    super(credentials[:key], credentials[:secret], credentials[:site])
+    super(credentials['key'], credentials['secret'], credentials['options'])
     if (req_token)
       @request_token = OAuth::RequestToken.new(@consumer, req_token['token'], req_token['secret'])
     else
