@@ -1,7 +1,7 @@
-require 'redstore/passwords'
+require 'redstore/crypto'
+
 class User < Ohm::Model
   extend Redstore::Crypto
-  include Redstore::Saver
 
   # attributes saved in redis
   attribute :passhash # hashed password

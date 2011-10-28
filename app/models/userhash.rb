@@ -1,4 +1,5 @@
 # SHA1 hash of username, i.e. encrypted username is saved as top level set in Redis
+require 'redstore/crypto'
 # Each entry in the set points to one unique user. Multiple users are allowed to have
 # the same username, so the hashed value will also be the same for them. The distinction is
 # the password used, which must differ if the username is duplicate.

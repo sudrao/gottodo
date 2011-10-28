@@ -52,8 +52,8 @@ module Request
   # After Access.new, you need to complete verify for further access
   # Access.new returns the URL for the user to go to
   # Pass in old request token/secret if recreating a request token
-  def initialize(callback_url, req_token=nil)
-    super(@@credentials)
+  def initialize(credentials, callback_url, req_token=nil)
+    super(credentials[:key], credentials[:secret], credentials[:site])
     if (req_token)
       @request_token = OAuth::RequestToken.new(@consumer, req_token['token'], req_token['secret'])
     else

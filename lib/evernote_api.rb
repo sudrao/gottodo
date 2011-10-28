@@ -3,8 +3,6 @@ require 'oauth_mod'
 
 module EvernoteAPI
   class Base < OauthMod::Base
-    @@credentials = OAUTH_CREDENTIALS[:evernote]
-
     # Return the response from Yammer after posting a message.
     def post(content)
       post_to("/api/v1/messages/", {:body => content})

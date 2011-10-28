@@ -3,7 +3,7 @@ tmp/
 \.project
 .bundle
 db/*.sqlite3
-log/*.log
+log/
 .sass-cache/
 .rvm*
 *.tmproj
