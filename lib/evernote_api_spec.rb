@@ -41,6 +41,23 @@ describe EvernoteAPI do
     str
   end
   
+  def get_form(body, name)
+    n = Nokogiri::HTML::DocumentFragment.parse(body)
+    nform = n.xpath('.//form', {'name' => name})
+    #puts nform.inspect
+    form = {}
+    # Get attributes of form
+    nform.each { |node| node.attributes.each { |k, a| form[k] = a.value } }
+    # Get form parameters
+    params = {}
+    nform.xpath('.//input').each do |field|
+      params[field['name']] = field['value']
+    end
+    form['params'] = params
+    #puts form.inspect
+    form
+  end
+  
   it "gets authorization url" do
     req = request()
     req.should_not be_nil
@@ -52,7 +69,7 @@ describe EvernoteAPI do
     req = request()
     link = req.authorize_url
     token = req.request_token
-    puts link
+    # puts link
     auth_uri = URI.parse(link)
     http = connect(auth_uri)
     # Go to the uri to get redirect to login page
@@ -82,20 +99,25 @@ describe EvernoteAPI do
     response = http.request(get_request)
     response.code.should == '200'
     get_cookies(response['set-cookie'], cookies)
+    # Parse the form for next step
+    form = get_form(response.body, 'oauth_authorize_form')
     # Authorize
-    post_request = Net::HTTP::Post.new(auth_uri.request_uri[/\A[^?]+/])
-    post_request.set_form_data(
-      { 'authorize' => 'Authorize', 'embed' => 'false', 'oauth_token' => token, 'oauth_callback' => DUMMY_CALLBACK }
-      )
+    post_request = Net::HTTP::Post.new(form['action'])
+    params = form['params']
+    params.delete('cancel') # leave 'authorize' in there
+    post_request.set_form_data(params)
     post_request['Cookie'] = cookies_to_s(cookies)
-    http.set_debug_output($stderr)
+    # http.set_debug_output($stderr)
     response = http.request(post_request)
     
     response.code.should == '302'
-    response['location'].should =~ /#{DUMMY_CALLBACK}.*/
-    # Now log in
-    #post_request = Net::HTTP::Post.new(uri.request_url)
-    
+    location = response['location']
+    location.should =~ /#{DUMMY_CALLBACK}.*/
+    # Get verifier
+    oauth_verifier = location[/oauth_verifier=(.+?)(\z|&)/, 1]
+    oauth_verifier.should_not be_nil
+    oauth_token = location[/oauth_token=(.+?)(\z|&)/, 1]
+    oauth_token.should == token.token
   end
   
   # it "can access an account" do
