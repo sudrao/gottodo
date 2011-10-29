@@ -5,14 +5,16 @@ require ::Rails.root.join('lib', 'evernote_api.rb')
 EVERNOTE_LOGIN_URL = '/Login.action'
 EVERNOTE_USER = 'sudtest1'
 DUMMY_CALLBACK = "http://dummy.callback.url/"
+SAVED_AUTH_FILE = Rails.root.join('tmp', 'oauth_test.yml')
 
 describe EvernoteAPI do
   before(:all) do
     @credentials = YAML::load_file(CREDENTIALS_FILE);
+    File.open(SAVED_AUTH_FILE, "wt") { }
   end
-  
-  def request
-    EvernoteAPI::Request.new(@credentials['evernote'], DUMMY_CALLBACK)
+
+  def request(req_token=nil)
+    EvernoteAPI::Request.new(@credentials['evernote'], DUMMY_CALLBACK, req_token)
   end
 
   def connect(uri)
@@ -21,7 +23,7 @@ describe EvernoteAPI do
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     http
   end
-  
+
   def get_cookies(str, cookies={})
     return cookies unless str
     assigns = str.split(/[;,]/)
@@ -32,7 +34,7 @@ describe EvernoteAPI do
     end
     cookies
   end
-  
+
   def cookies_to_s(cookies)
     str = ''
     cookies.each do |k, v|
@@ -40,7 +42,7 @@ describe EvernoteAPI do
     end
     str
   end
-  
+
   def get_form(body, name)
     n = Nokogiri::HTML::DocumentFragment.parse(body)
     nform = n.xpath('.//form', {'name' => name})
@@ -57,6 +59,16 @@ describe EvernoteAPI do
     #puts form.inspect
     form
   end
+
+  def save_oauth(user, token, secret, verifier)
+    File.open(SAVED_AUTH_FILE, 'at') do |f|
+      f.puts "#{user}:"
+      f.puts "  token:"
+      f.puts "    token: #{token}"
+      f.puts "    secret: #{secret}"
+      f.puts "  verifier: #{verifier}"
+    end
+  end
   
   it "gets authorization url" do
     req = request()
@@ -64,7 +76,7 @@ describe EvernoteAPI do
     link = req.authorize_url
     link.should =~ /.*oauth_token=.*/
   end
-  
+
   it "authorizes and gets verifier" do
     req = request()
     link = req.authorize_url
@@ -85,7 +97,7 @@ describe EvernoteAPI do
     post_request.set_form_data({
       'username' => EVERNOTE_USER, 'password' => @credentials['password'], 'remember' => 'true',
       'login' => 'Sign in', 'targetUrl' => auth_uri.request_uri
-      })
+    })
     post_request['Cookie'] = cookies_to_s(cookies) if cookies != {}
     # http.set_debug_output($stderr)
     response = http.request(post_request)
@@ -109,7 +121,7 @@ describe EvernoteAPI do
     post_request['Cookie'] = cookies_to_s(cookies)
     # http.set_debug_output($stderr)
     response = http.request(post_request)
-    
+
     response.code.should == '302'
     location = response['location']
     location.should =~ /#{DUMMY_CALLBACK}.*/
@@ -118,68 +130,81 @@ describe EvernoteAPI do
     oauth_verifier.should_not be_nil
     oauth_token = location[/oauth_token=(.+?)(\z|&)/, 1]
     oauth_token.should == token.token
+    # Save oauth for this user in a file
+    save_oauth(EVERNOTE_USER, token.token, token.secret, oauth_verifier)
   end
-  
+
+  it "verifies access" do
+    oauth_yaml = YAML::load_file(SAVED_AUTH_FILE)
+    oauth = oauth_yaml[EVERNOTE_USER]
+    req = request(oauth['token'])
+    @access = req.verify(oauth['verifier'])
+    @access.should_not be_nil
+    @access.token.should_not be_nil
+    @access.secret.should_not be_nil
+  end
+
+
   # it "can access an account" do
   #   # Recreate consumer and request token that was used in new action
   #   req = TwitterAPI::Request.new(credentials, session[:rtoken], session[:rsecret])
-  #   
+  # 
   # end
 end
 =begin
-    @twitter = true
-    begin
-      credentials = TwitterAPI::Base.get_yaml_credentials
-      req = TwitterAPI::Request.new(credentials)
-      @link = req.authorize_url
-      # Save request token essentials to use during create
-      session[:rtoken] = req.request_token.token
-      session[:rsecret] = req.request_token.secret
-      render :template => "yammers/new.html.erb"
-    rescue
-      flash[:error] = $!
-      render :template => "yammers/show.html.erb"
-    end
+  @twitter = true
+  begin
+    credentials = TwitterAPI::Base.get_yaml_credentials
+    req = TwitterAPI::Request.new(credentials)
+    @link = req.authorize_url
+    # Save request token essentials to use during create
+    session[:rtoken] = req.request_token.token
+    session[:rsecret] = req.request_token.secret
+    render :template => "yammers/new.html.erb"
+  rescue
+    flash[:error] = $!
+    render :template => "yammers/show.html.erb"
   end
+end
 
-  # POST /twitter
-  # Create and save new credentials for this user
-  def create
-    @twitter = true
+# POST /twitter
+# Create and save new credentials for this user
+def create
+  @twitter = true
+  begin
+    credentials = TwitterAPI::Base.get_yaml_credentials
+    # Recreate consumer and request token that was used in new action
+    req = TwitterAPI::Request.new(credentials, session[:rtoken], session[:rsecret])
+    # Now verify with Twitter and get the final access token for user
+    @result = "Congratulations - cross-posting with Twitter is now set up!"
     begin
-      credentials = TwitterAPI::Base.get_yaml_credentials
-      # Recreate consumer and request token that was used in new action
-      req = TwitterAPI::Request.new(credentials, session[:rtoken], session[:rsecret])
-      # Now verify with Twitter and get the final access token for user
-      @result = "Congratulations - cross-posting with Twitter is now set up!"
-      begin
-        access_token = req.verify(params[:verifier])
-        # save for next time
-        @visitor_home.twitter_token = access_token.token
-        @visitor_home.twitter_secret = access_token.secret
-        @visitor_home.twitter_name = params[:twitter_name]
-        if @visitor_home.save
-          redirect_to :action => 'show'
-        else
-          @result = "ublog login or database error - Twitter setup failed."
-          render :template => "yammers/create.html.erb"
-        end
-      rescue
-        @result = "Twitter authorization failed! Your verification code was not accepted: " + $!
+      access_token = req.verify(params[:verifier])
+      # save for next time
+      @visitor_home.twitter_token = access_token.token
+      @visitor_home.twitter_secret = access_token.secret
+      @visitor_home.twitter_name = params[:twitter_name]
+      if @visitor_home.save
+        redirect_to :action => 'show'
+      else
+        @result = "ublog login or database error - Twitter setup failed."
         render :template => "yammers/create.html.erb"
       end
     rescue
-      flash[:error] = $!
-      @result = "We're sorry but something went wrong."
+      @result = "Twitter authorization failed! Your verification code was not accepted: " + $!
       render :template => "yammers/create.html.erb"
     end
+  rescue
+    flash[:error] = $!
+    @result = "We're sorry but something went wrong."
+    render :template => "yammers/create.html.erb"
   end
-  
-  # DELETE /twitter
-  # Remove credentials
-  def destroy
-    @visitor_home.update_attributes(:twitter_name => nil, :twitter_token => nil, :twitter_secret => nil)
-    redirect_to :action => 'show'
-  end
+end
+
+# DELETE /twitter
+# Remove credentials
+def destroy
+  @visitor_home.update_attributes(:twitter_name => nil, :twitter_token => nil, :twitter_secret => nil)
+  redirect_to :action => 'show'
+end
 end
 =end
