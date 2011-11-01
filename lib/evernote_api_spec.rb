@@ -61,7 +61,7 @@ describe EvernoteAPI do
   end
 
   def save_oauth(user, token, secret, verifier)
-    File.open(SAVED_AUTH_FILE, 'at') do |f|
+    File.open(SAVED_AUTH_FILE, 'wt') do |f|
       f.puts "#{user}:"
       f.puts "  token:"
       f.puts "    token: #{token}"
@@ -70,6 +70,13 @@ describe EvernoteAPI do
     end
   end
   
+  def verify_access
+    oauth_yaml = YAML::load_file(SAVED_AUTH_FILE)
+    oauth = oauth_yaml[EVERNOTE_USER]
+    req = request(oauth['token'])
+    req.verify(oauth['verifier'])
+  end
+    
   it "gets authorization url" do
     req = request()
     req.should_not be_nil
@@ -130,81 +137,22 @@ describe EvernoteAPI do
     oauth_verifier.should_not be_nil
     oauth_token = location[/oauth_token=(.+?)(\z|&)/, 1]
     oauth_token.should == token.token
-    # Save oauth for this user in a file
+    # Save temp oauth credentials for this user in a file
     save_oauth(EVERNOTE_USER, token.token, token.secret, oauth_verifier)
   end
 
   it "verifies access" do
-    oauth_yaml = YAML::load_file(SAVED_AUTH_FILE)
-    oauth = oauth_yaml[EVERNOTE_USER]
-    req = request(oauth['token'])
-    @access = req.verify(oauth['verifier'])
-    @access.should_not be_nil
-    @access.token.should_not be_nil
-    @access.secret.should_not be_nil
+    access = verify_access()
+    access.should_not be_nil
+    access.token.should_not be_nil
+    access.secret.should_not be_nil
+    # Save final oauth credentials for this user
+    save_oauth(EVERNOTE_USER, access.token, access.secret, "")
   end
 
 
-  # it "can access an account" do
-  #   # Recreate consumer and request token that was used in new action
-  #   req = TwitterAPI::Request.new(credentials, session[:rtoken], session[:rsecret])
-  # 
-  # end
-end
-=begin
-  @twitter = true
-  begin
-    credentials = TwitterAPI::Base.get_yaml_credentials
-    req = TwitterAPI::Request.new(credentials)
-    @link = req.authorize_url
-    # Save request token essentials to use during create
-    session[:rtoken] = req.request_token.token
-    session[:rsecret] = req.request_token.secret
-    render :template => "yammers/new.html.erb"
-  rescue
-    flash[:error] = $!
-    render :template => "yammers/show.html.erb"
+  it "can access an account" do
+    access = access()
+    
   end
 end
-
-# POST /twitter
-# Create and save new credentials for this user
-def create
-  @twitter = true
-  begin
-    credentials = TwitterAPI::Base.get_yaml_credentials
-    # Recreate consumer and request token that was used in new action
-    req = TwitterAPI::Request.new(credentials, session[:rtoken], session[:rsecret])
-    # Now verify with Twitter and get the final access token for user
-    @result = "Congratulations - cross-posting with Twitter is now set up!"
-    begin
-      access_token = req.verify(params[:verifier])
-      # save for next time
-      @visitor_home.twitter_token = access_token.token
-      @visitor_home.twitter_secret = access_token.secret
-      @visitor_home.twitter_name = params[:twitter_name]
-      if @visitor_home.save
-        redirect_to :action => 'show'
-      else
-        @result = "ublog login or database error - Twitter setup failed."
-        render :template => "yammers/create.html.erb"
-      end
-    rescue
-      @result = "Twitter authorization failed! Your verification code was not accepted: " + $!
-      render :template => "yammers/create.html.erb"
-    end
-  rescue
-    flash[:error] = $!
-    @result = "We're sorry but something went wrong."
-    render :template => "yammers/create.html.erb"
-  end
-end
-
-# DELETE /twitter
-# Remove credentials
-def destroy
-  @visitor_home.update_attributes(:twitter_name => nil, :twitter_token => nil, :twitter_secret => nil)
-  redirect_to :action => 'show'
-end
-end
-=end
