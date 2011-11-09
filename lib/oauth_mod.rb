@@ -1,6 +1,5 @@
 # Module for oauth access
 require 'oauth/consumer'
-require 'hpricot'
 
 module OauthMod
 class Base

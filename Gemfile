@@ -9,9 +9,10 @@ gem 'sqlite3'
 gem 'redis'
 gem 'evernote'
 gem 'oauth'
-gem 'hpricot'
 gem 'haml-rails'
 gem 'ohm'
+gem 'mongoid', '~> 2.3'
+gem 'bson_ext', '~> 1.4'
 
 # Gems used only for assets and not required
 # in production environments by default.
@@ -33,9 +34,24 @@ gem 'jquery-rails'
 # gem 'ruby-debug19', :require => 'ruby-debug'
 
 group :test, :development do
-  # Pretty printed test output
-  gem 'turn', :require => false
   gem 'rspec-rails'
   gem 'cucumber-rails'
+end
+
+group :test do
+  # Pretty printed test output
+  gem 'turn', :require => false
   gem 'capybara'
+end
+
+group :development do
+  gem 'guard'
+  gem 'guard-rspec'
+  gem 'guard-cucumber'
+  gem 'rb-inotify', :require => false
+  gem 'rb-fsevent', :require => false
+  gem 'rb-fchange', :require => false
+  gem 'growl_notify'
+  gem 'spork', "~> 0.9.0.rc"
+  gem 'guard-spork'
 end
