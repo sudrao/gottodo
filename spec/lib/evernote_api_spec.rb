@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + "/../spec/spec_helper.rb")
+require 'spec_helper.rb'
 require 'yaml'
 CREDENTIALS_FILE = Rails.root.join('config', 'oauth_web.yml')
 require ::Rails.root.join('lib', 'evernote_api.rb')
@@ -151,8 +151,8 @@ describe EvernoteAPI do
   end
 
 
-  it "can access an account" do
-    access = access()
-    
-  end
+  # it "can access an account" do
+  #   access = access()
+  #   
+  # end
 end
