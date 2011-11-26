@@ -42,22 +42,14 @@ class User < Ohm::Model
     self.userhash.users.add(self)
   end
   
-  class << self # class methods like ActiveRecord
+  class << self # class methods
     def find_by_login(params)
-      # first find the username by its hash
-      match = Userhash.new(:username => params[:username])
-      uh = Userhash.find(:hashname => match.hashname).first
+      # first find the username
+      uh = Userhash.find(params).first
       # Need to iterate over all passwords for this username
       uh.users.detect do |user|
         BCrypt::Password.new(user.passhash) == params[:password]
       end
     end
-
-    # def authenticate_with_salt(userid, salt)
-    #   if salt == Redstore::Auth.get_salt_by_id(userid)
-    #     u = self.new({:salt => salt}, userid)
-    #   end
-    #   u
-    # end
   end
 end

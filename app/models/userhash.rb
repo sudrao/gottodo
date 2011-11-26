@@ -38,10 +38,15 @@ class Userhash < Ohm::Model
     def username_salt
       unless @username_salt
         # if redis doesn't have the salt yet, generate salt
-        Ohm.redis.set USERNAME_SALT_KEY, BCrypt::Engine.generate_salt
-        @username_salt = Ohm.redis.get USERNAME_SALT_KEY
+        @username_salt = BCrypt::Engine.generate_salt
+        Ohm.redis.set USERNAME_SALT_KEY, @username_salt
       end
       @username_salt
+    end
+    
+    def find(params)
+      match = new(:username => params[:username])
+      super(:hashname => match.hashname)
     end
   end
 end
