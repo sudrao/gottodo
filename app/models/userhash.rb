@@ -1,9 +1,7 @@
 require 'bcrypt'
-# We need a fixed salt for the app instance which ideally
-# should be generated once and saved in the database. Just one salt
-# value to be used for hashing the username. Defining that as a constant
-# here. Change to a db value later so each installation gets a different salt.
-FIXED_SALT = "$2a$10$6vpBC/mj.2Xi5zz/fxuidu"
+# We need a fixed salt for the app instance which is
+# generated once and saved in the database.
+USERNAME_SALT_KEY = "USERNAME_SALT"
 
 # Each entry in the set points to one unique user. Multiple users are allowed to have
 # the same username, so the hashed value will also be the same for them. The distinction is
@@ -22,7 +20,7 @@ class Userhash < Ohm::Model
   # and gets hashed but not saved.
   def initialize(params={})
     if params[:username]
-      hash = BCrypt::Engine.hash_secret(params[:username], Userhash.username_salt)
+      hash = Engine.hash_secret(params[:username], Userhash.username_salt)
       params[:hashname] = Password.new(hash)
       params.delete(:username)
     end
@@ -34,10 +32,16 @@ class Userhash < Ohm::Model
     assert_unique :hashname
   end
   
-  def self.username_salt
-    FIXED_SALT
+  class << self
+    @username_salt = Ohm.redis.get USERNAME_SALT_KEY
+    
+    def username_salt
+      unless @username_salt
+        # if redis doesn't have the salt yet, generate salt
+        Ohm.redis.set USERNAME_SALT_KEY, BCrypt::Engine.generate_salt
+        @username_salt = Ohm.redis.get USERNAME_SALT_KEY
+      end
+      @username_salt
+    end
   end
-  # def self.find_by_username(name)
-  #   find(:hashname => encrypt_username(name))
-  # end
 end

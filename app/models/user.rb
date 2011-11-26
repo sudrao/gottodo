@@ -28,12 +28,11 @@ class User < Ohm::Model
     # This passhash must not exist for the same
     # userhash
     #  puts "Got userhash = " + self.userhash.inspect
-    self.userhash.users.each do |user|
-      if BCrypt::Password.new(user.passhash) == self.password
-        errors << [[:passhash], [:not_unique]] 
-        break;
+    errors << [[:passhash], [:not_unique]] if
+      self.userhash.users.detect do |user|
+        Password.new(user.passhash) == self.password
       end
-    end
+
     errors << [[:password], [:not_matching]] unless
       password == repeat
   end
@@ -46,12 +45,12 @@ class User < Ohm::Model
   class << self # class methods like ActiveRecord
     def find_by_login(params)
       # first find the username by its hash
-      uh = Userhash.find(:hashname => BCrypt::Password.new(BCrypt::Engine.hash_secret(params[:username], Userhash.username_salt))).first
+      match = Userhash.new(:username => params[:username])
+      uh = Userhash.find(:hashname => match.hashname).first
       # Need to iterate over all passwords for this username
-      uh.users.each do |user|
-        return user if (BCrypt::Password.new(user.passhash) == params[:password])
+      uh.users.detect do |user|
+        BCrypt::Password.new(user.passhash) == params[:password]
       end
-      nil
     end
 
     # def authenticate_with_salt(userid, salt)
