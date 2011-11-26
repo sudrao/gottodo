@@ -6,6 +6,7 @@ EVERNOTE_LOGIN_URL = '/Login.action'
 EVERNOTE_USER = 'sudtest1'
 DUMMY_CALLBACK = "http://dummy.callback.url/"
 SAVED_AUTH_FILE = Rails.root.join('tmp', 'oauth_test.yml')
+NOTESTORE_PATH = "/edam/note/"
 
 describe EvernoteAPI do
   before(:all) do
@@ -16,7 +17,11 @@ describe EvernoteAPI do
   def request(req_token=nil)
     EvernoteAPI::Request.new(@credentials['evernote'], DUMMY_CALLBACK, req_token)
   end
-
+  
+  def access(access_token)
+    EvernoteAPI::Access.new(@credentials['evernote'], access_token)
+  end
+  
   def connect(uri)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -70,13 +75,20 @@ describe EvernoteAPI do
     end
   end
   
+  def get_access
+    oauth_yaml = YAML::load_file(SAVED_AUTH_FILE)
+    oauth = oauth_yaml[EVERNOTE_USER]
+    # return access token and shard id (scraped from token)
+    return oauth['token']['token'], oauth['token']['token'].sub(/.*S=(.*?):.*/, '\1')
+  end
+    
   def verify_access
     oauth_yaml = YAML::load_file(SAVED_AUTH_FILE)
     oauth = oauth_yaml[EVERNOTE_USER]
     req = request(oauth['token'])
     req.verify(oauth['verifier'])
   end
-    
+  
   it "gets authorization url" do
     req = request()
     req.should_not be_nil
@@ -141,7 +153,7 @@ describe EvernoteAPI do
     save_oauth(EVERNOTE_USER, token.token, token.secret, oauth_verifier)
   end
 
-  it "verifies access" do
+  it "verifies access", :verifier => true do
     access = verify_access()
     access.should_not be_nil
     access.token.should_not be_nil
@@ -151,8 +163,34 @@ describe EvernoteAPI do
   end
 
 
-  # it "can access an account" do
-  #   access = access()
-  #   
-  # end
+  it "can access an account" do
+    token, shard_id = get_access
+    token.should_not be_nil
+    
+    note_store_url = @credentials['evernote']['options']['site'] + NOTESTORE_PATH + shard_id
+    # note_store_url.should == nil
+    note_store = Evernote::NoteStore.new(note_store_url)
+    note_store.should_not be_nil
+    notebooks = note_store.listNotebooks(token)
+    notebooks.should_not be_nil
+  end
+  
+  def access_notestore
+    token, shard_id = get_access
+    note_store_url = @credentials['evernote']['options']['site'] + NOTESTORE_PATH + shard_id
+    return Evernote::NoteStore.new(note_store_url), token
+  end
+  it "can access notes" do
+    note_store, token = access_notestore
+    filter = Evernote::EDAM::NoteStore::NoteFilter.new(:words => '*')
+    note = note_store.findNotes(token, filter, offset=0, maxNotes=1).notes.first
+    note.should_not be_nil     
+  end
+  
+  it "can access a todo marked note" do
+    note_store, token = access_notestore
+    filter = Evernote::EDAM::NoteStore::NoteFilter.new(:words => 'todo:*')
+    note = note_store.findNotes(token, filter, offset=0, maxNotes=1).notes.first
+    note.should_not be_nil 
+  end
 end

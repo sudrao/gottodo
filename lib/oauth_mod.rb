@@ -36,9 +36,9 @@ end
 
 # Include Access module in a sub-class of class containing OauthMod::Base
 module Access
-  def initialize(credentials)
-    super(credentials[:consumer_key], credentials[:consumer_secret])
-    @access_token = OAuth::AccessToken.new(@consumer, credentials[:access_token], credentials[:access_token_secret])
+  def initialize(credentials, access_token)
+    super(credentials['key'], credentials['secret'], credentials['options'])
+    @access_token = OAuth::AccessToken.new(@consumer, access_token['token'], access_token['secret'])
   end
 end
   
